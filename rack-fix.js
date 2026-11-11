@@ -119,11 +119,19 @@
       <label><input type="radio" name="align" value="center" checked>Center</label>
       <label><input type="radio" name="align" value="right">Right</label>
       <label><input type="checkbox" id="compactUpper" checked> Reduce upper rows</label>
+      <button type="button" id="saveRack">Save rack</button>
+      <button type="button" id="viewRack">View larger</button>
     `;
     host.appendChild(box);
     box.querySelectorAll('[name=maxRow]').forEach(e=>e.onchange=()=>{maxPerRow=+e.value;render()});
     box.querySelectorAll('[name=align]').forEach(e=>e.onchange=()=>{alignment=e.value;render()});
     box.querySelector('#compactUpper').onchange=e=>{compactUpper=e.target.checked;render()};
+    box.querySelector('#saveRack').onclick=()=>{
+      localStorage.setItem("armyAwardBuilderRack",JSON.stringify({rack:[...rack],devices:state,maxPerRow,alignment,compactUpper}));
+      box.querySelector('#saveRack').textContent="Saved";
+      setTimeout(()=>box.querySelector('#saveRack').textContent="Save rack",900);
+    };
+    box.querySelector('#viewRack').onclick=()=>showLargeRack();
   }
 
   function deviceText(id){
@@ -222,6 +230,7 @@
         return `<div class="selected-award" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee">
           <img class="thumb" src="${x.uri}" alt="${x.name}" title="${x.name}">
           <div style="flex:1"><div>${x.name}</div><small style="color:#777">${x.abbr}${deviceText(id)? " • "+deviceText(id):""}</small></div>
+          <button type="button" onclick="deviceModal(ITEMS.find(v=>v.id===${id}))">Edit</button>
           <button class="btn danger" onclick="remove(${id})">Remove</button>
         </div>`;
       }).join(""):'<div style="color:#888">No awards selected.</div>';
@@ -230,9 +239,25 @@
     requestAnimationFrame(replaceTreeLabels);
   };
 
+  function showLargeRack(){
+    const b=document.createElement("div");
+    b.className="device-modal-backdrop";
+    b.innerHTML=`<div class="device-modal" style="max-width:900px">
+      <h3>Ribbon Rack</h3>
+      <div style="padding:25px;background:#eee;border-radius:5px;overflow:auto">
+        <div style="transform:scale(1.45);transform-origin:top center;margin:0 auto;width:max-content">${rackEl.innerHTML}</div>
+      </div>
+      <div class="device-actions"><button type="button" id="closeLarge">Close</button></div>
+    </div>`;
+    document.body.appendChild(b);
+    b.querySelector("#closeLarge").onclick=()=>b.remove();
+  }
+
   function start(){
     if(!applyNames())return setTimeout(start,100);
-    interceptAdds(); render(); replaceTreeLabels();
+    interceptAdds();
+    render();
+    replaceTreeLabels();
   }
   start();
 })();
