@@ -1,4 +1,5 @@
-name: Deploy Army Award Builder
+name: Army Award Builder
+run-name: Deploy site
 
 on:
   push:
