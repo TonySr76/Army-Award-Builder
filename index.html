@@ -10,4 +10,56 @@ let perRow=3,align='center';
 function buildRows(ordered){let rows=[];for(let end=ordered.length;end>0;end-=perRow)rows.unshift(ordered.slice(Math.max(0,end-perRow),end));return rows}
 function render(){let ordered=[...rack].sort((a,b)=>a-b),rows=buildRows(ordered);rackEl.innerHTML=rows.length?rows.map(row=>`<div class="rackrow" style="justify-content:${align==='right'?'flex-end':'center'}">${row.map(id=>{let x=ITEMS.find(v=>v.id===id);return `<img class="ribbon" title="${x.name}" src="${x.uri}">`}).join('')}</div>`).join(''):'<div class="empty">Select awards from the left to build the rack.</div>';selected.innerHTML=ordered.length?ordered.map(id=>{let x=ITEMS.find(v=>v.id===id);return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee"><img class="thumb" src="${x.uri}"><span style="flex:1">${x.name}</span><button class="btn danger" onclick="remove(${id})">Remove</button></div>`}).join(''):'<div style="color:#888">No awards selected.</div>';count.textContent=`${ordered.length} award${ordered.length===1?'':'s'}`}
 function addRackOptions(){const c=document.querySelector('.controls');const old=document.getElementById('rackOptions');if(old)old.remove();const d=document.createElement('div');d.id='rackOptions';d.className='rack-options';d.innerHTML='<strong>Row:</strong><label><input type="radio" name="perRow" value="3" checked> 3</label><label><input type="radio" name="perRow" value="4"> 4</label><strong>Stack:</strong><label><input type="radio" name="align" value="center" checked> Center</label><label><input type="radio" name="align" value="right"> Right</label>';c.prepend(d);d.onclick=e=>{if(e.target.name==="perRow"){perRow=Number(e.target.value);render()} if(e.target.name==="align"){align=e.target.value;render()}}}
-search.oninput=renderList;document.getElementById('clear').onclick=()=>{rack=[];render()};renderList();addRackOptions();render();</script></body></html>
+search.oninput=renderList;document.getElementById('clear').onclick=()=>{rack=[];render()};renderList();addRackOptions();render();</script><script>
+(function(){
+var M=[
+["Legion of Merit","LM",["Combat \"C\"","Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Bronze Star Medal","BSM",["Bronze \"V\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Defense Meritorious Service Medal","DMSM",["Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Meritorious Service Medal","MSM",["Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Joint Service Commendation Medal","JSCM",["Bronze \"V\"","Combat \"C\"","Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Army Commendation Medal","ARCOM",["Bronze \"V\"","Combat \"C\"","Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Joint Service Achievement Medal","JSAM",["Combat \"C\"","Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Army Achievement Medal","AAM",["Combat \"C\"","Bronze \"R\"","Silver Oak Leaf Clusters","Bronze Oak Leaf Clusters"]],
+["Army Good Conduct Medal","AGCM",["Knots Medium"]],
+["National Defense Service Medal","NDSM",["Bronze Stars"]],
+["Armed Forces Expeditionary Medal","AFEM",["Arrowhead","Silver Stars","Bronze Stars"]],
+["Afghanistan Campaign Medal","ACM",["Arrowhead","Silver Stars","Bronze Stars"]],
+["Iraq Campaign Medal","ICM",["Arrowhead","Silver Stars","Bronze Stars"]],
+["Global War on Terrorism Expeditionary Medal","GWOTEM",["Arrowhead","Silver Stars","Bronze Stars"]],
+["Global War on Terrorism Service Medal","GWOTSM",["Silver Stars","Bronze Stars"]],
+["Korean Defense Service Medal","KDSM",[]],
+["Armed Forces Service Medal","AFSM",["Silver Stars","Bronze Stars"]],
+["Humanitarian Service Medal","HSM",["Silver Stars","Bronze Stars"]],
+["Military Outstanding Volunteer Service Medal","MOVSM",["Silver Stars","Bronze Stars"]],
+["NCO Professional Development Ribbon","NCOPDR",["Numeral"]],
+["Army Service Ribbon","ASR",[]],
+["Overseas Service Ribbon","OSR",["Numeral"]],
+["NATO Medal","NATO Medal",["Bronze Stars"]]];
+var R=[],D={},per=3,align="center",compact=true,upper="auto",openId=null;
+var listEl=document.getElementById("list"),searchEl=document.getElementById("search"),rackEl=document.getElementById("rack"),selectedEl=document.getElementById("selected"),countEl=document.getElementById("count");
+var css=document.createElement("style");css.textContent=
+".award{grid-template-columns:79px 1fr auto!important}.award .thumb{width:79px!important;height:22px!important}"+
+".award-detail{grid-column:1/-1;background:#f7f7f7;border-top:1px solid #ddd;padding:12px 8px}"+
+".award-detail-title{font-weight:700;margin-bottom:8px}.device-list{display:flex;flex-wrap:wrap;gap:7px}"+
+".device-opt{display:flex;align-items:center;gap:5px;border:1px solid #ccc;background:#fff;border-radius:3px;padding:5px 7px;font-size:12px}.device-opt input{width:42px}"+
+".rack{padding:22px!important;width:calc(4 * 106px + 44px)!important;max-width:100%!important}.rackrow{height:29px!important;gap:0!important;margin:0!important}.ribbon{width:106px!important;height:29px!important;margin:0!important}.rackrow.upper-compact{height:25px!important}.rackrow.upper-compact .ribbon{width:90px!important;height:25px!important}"+
+"#selected .thumb{width:72px!important;height:20px!important;max-width:72px!important}.aab-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 18px;border-top:1px solid #ddd;font-size:13px}.aab-controls label{display:flex;gap:4px;align-items:center}";
+document.head.appendChild(css);
+ITEMS.forEach(function(x,i){if(M[i]){x.name=M[i][0];x.abbr=M[i][1];x.devices=M[i][2]}});
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function renderList(){var q=searchEl.value.toLowerCase();listEl.innerHTML=ITEMS.filter(function(x){return (x.name+" "+x.abbr).toLowerCase().indexOf(q)>=0}).map(function(x){
+var open=openId===x.id,d=x.devices||[],h='<div class="award" data-id="'+x.id+'"><img class="thumb" src="'+x.uri+'" alt="'+esc(x.name)+'"><div class="aname"><b>'+x.abbr+'</b></div><button class="add" type="button" data-select="'+x.id+'">'+(open?"CLOSE":"SELECT")+'</button>';
+if(open){h+='<div class="award-detail"><div class="award-detail-title">'+esc(x.name)+'</div>';if(d.length){h+='<div class="device-list">'+d.map(function(v){return '<label class="device-opt"><span>'+esc(v)+'</span><input type="number" min="0" max="10" data-dev="'+esc(v)+'" value="'+((D[x.id]||{})[v]||0)+'"></label>'}).join("")+'</div>'}else h+='<div style="font-size:12px;color:#666">No authorized devices.</div>';h+='<div style="margin-top:10px"><button type="button" class="btn" data-add="'+x.id+'">ADD TO RACK</button> <button type="button" class="btn" data-close="'+x.id+'">CANCEL</button></div></div>'}
+return h+'</div>'}).join("")}
+function buildRows(a){var out=[];for(var i=a.length;i>0;i-=per)out.unshift(a.slice(Math.max(0,i-per),i));return out}
+function render(){var a=R.slice().sort(function(x,y){return x-y}),rs=buildRows(a);rackEl.innerHTML=rs.length?rs.map(function(r,i){var isUpper=compact&&i<rs.length-2,w=isUpper?90*r.length:106*r.length,style="width:"+w+"px;margin-left:"+(align==="right"?"auto":"auto")+";margin-right:"+(align==="right"?"0":"auto")+";";return '<div class="rackrow '+(isUpper?"upper-compact":"")+'" style="'+style+'">'+r.map(function(id){var x=ITEMS.find(function(v){return v.id===id});return '<img class="ribbon" src="'+x.uri+'" alt="'+esc(x.name)+'" title="'+esc(x.name)+'">'}).join("")+'</div>'}).join(""):'<div class="empty">Select awards from the left to build the rack.</div>';
+selectedEl.innerHTML=a.length?a.map(function(id){var x=ITEMS.find(function(v){return v.id===id}),d=D[id]||{},ds=Object.keys(d).filter(function(k){return d[k]>0}).map(function(k){return k+(d[k]>1?" ×"+d[k]:"")}).join(", ");return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee"><img class="thumb" src="'+x.uri+'"><div style="flex:1"><div>'+esc(x.name)+'</div><small style="color:#777">'+x.abbr+(ds?" • "+esc(ds):"")+'</small></div><button class="btn" data-edit="'+id+'">Edit</button><button class="btn danger" data-remove="'+id+'">Remove</button></div>'}).join(""):'<div style="color:#888">No awards selected.</div>';countEl.textContent=a.length+" award"+(a.length===1?"":"s")}
+function addControls(){var c=document.querySelector(".controls"),old=document.getElementById("aabControls");if(old)old.remove();var d=document.createElement("div");d.id="aabControls";d.className="aab-controls";d.innerHTML='<b>Max Per Row</b><label><input type="radio" name="aabper" value="3" checked>3</label><label><input type="radio" name="aabper" value="4">4</label><b>Alignment</b><label><input type="radio" name="aabal" value="center" checked>Center</label><label><input type="radio" name="aabal" value="right">Right</label><b>Upper Rows</b><select id="aabUpper"><option value="auto">Auto</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select><label><input id="aabCompact" type="checkbox" checked>Reduce upper rows</label><button type="button" class="btn" id="aabView">View larger</button>';c.prepend(d);
+d.onclick=function(e){if(e.target.name==="aabper"){per=+e.target.value;render()}if(e.target.name==="aabal"){align=e.target.value;render()}if(e.target.id==="aabCompact"){compact=e.target.checked;render()}if(e.target.id==="aabUpper"){upper=e.target.value;render()}if(e.target.id==="aabView"){var w=window.open("","_blank");if(w){w.document.write("<body style='margin:0;background:#eee;padding:60px'><div style='background:#151515;padding:30px;width:max-content'>"+rackEl.innerHTML+"</div></body>")}}}}
+listEl.onclick=function(e){var row=e.target.closest(".award");if(!row)return;var id=+row.dataset.id;if(e.target.dataset.select){openId=openId===id?null:id;renderList();return}if(e.target.dataset.close){openId=null;renderList();return}if(e.target.dataset.add){D[id]={};row.querySelectorAll("[data-dev]").forEach(function(i){var n=+i.value;if(n)D[id][i.dataset.dev]=n});if(!R.includes(id))R.push(id);openId=null;render();renderList()}};
+selectedEl.onclick=function(e){if(e.target.dataset.remove){R=R.filter(function(id){return id!==+e.target.dataset.remove});render()}if(e.target.dataset.edit){openId=+e.target.dataset.edit;renderList();document.querySelector(".left").scrollTop=0}};
+searchEl.oninput=renderList;document.getElementById("clear").onclick=function(){R=[];D={};render();renderList()};
+addControls();renderList();render();
+})();
+</script></body></html>
